@@ -7,7 +7,6 @@ import reduxThunk  from 'redux-thunk';
 
 import App from './components/App';
 import reducers from './reducers';
-import { CLIENT_RENEG_LIMIT } from 'tls';
 
 const store = createStore(reducers, {}, applyMiddleware(reduxThunk));
 
