@@ -1,4 +1,4 @@
-module.exports = (survey) => {
+module.exports = (survey, keys) => {
   return `
     <html>
       <body>
