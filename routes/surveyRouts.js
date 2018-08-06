@@ -11,14 +11,21 @@ const surveyTemplates = require('../services/emailTemplates/surveyTemplates');
 const keys = require('./../config/keys');
 
 module.exports = (app) => {
-  app.get('/api/surveys/thanks', (req, res) => {
+  app.get('/api/surveys/', requireLogin, async (req, res) => {
+    const surveys = await Survey.find({ _user: req.user.id })
+      .select({ recipients: false });
+    
+    res.send(surveys);
+  });
+
+  app.get('/api/surveys/:surveyId/:choise', (req, res) => {
     res.send('THanks for woing')
   });
 
   app.post('/api/surveys/webhooks', (req, res) => {
     const p = new Path('/api/surveys/:surveyId/:choice');
-
-    const events = _.chain(req.body)
+    console.log(req.body);
+    _.chain(req.body)
       .map( ({ url, email }) => {
         const match = p.test(new URL(url).pathname);
         if (match) {
@@ -27,10 +34,22 @@ module.exports = (app) => {
       })
       .compact()
       .uniqBy('email', 'surveyId')
+      .each((event) => {
+        console.log('EVENT', event)
+        Survey.updateOne({
+          _id: event.surveyId,
+          recipients: {
+            $elemMatch: { email: event.email, responded: false }
+          }
+        }, {
+          $inc: { [event.choice]: 1 },
+          $set: { 'recipients.$.responded': true },
+          lastResponded: new Date()
+        }).exec();
+      })
       .value();
-    console.log(events);
     
-    // res.send({});
+    res.send({});
   });
 
   app.post('/api/surveys', requireLogin, requireCredits, async (req, res) => {
